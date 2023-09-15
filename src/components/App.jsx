@@ -6,19 +6,31 @@ import '../index.css';
 import PopupWithForm from "./landing/PopupWithForm";
 import ImagePopup from "./landing/ImagePopup";
 import { api } from "../utils/Api";
+import { auth } from "../utils/Auth";
 import { CurrentUserContext } from "../contexts/CurrentUserContext";
 import EditProfilePopup from "./landing/EditProfilePopup";
 import EditAvatarPopup from "./landing/EditAvatarPopup";
 import AddCardPopup from "./landing/AddCardPopup";
+import {Route, Routes, useNavigate} from "react-router-dom";
+import Register from "./Register";
+import Login from "./Login";
+import ProtectedRoute from "./ProtectedRoute";
+import InfoTooltip from "./InfoTooltip";
+import imgAuthYes from '../images/auth_yes.png';
+import imgAuthNo from '../images/auth_no.png';
 
 function App() {
     const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = React.useState(false);
     const [isAddCardPopupOpen, setIsAddCardPopupOpen] = React.useState(false);
     const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = React.useState(false);
     const [isDeleteCardPopupOpen, setIsDeleteCardPopupOpen] = React.useState({isOpen : false, card: {}});
+    const [isInfoTooltipOpen, setIsInfoTooltipOpen] = React.useState(false);
     const [selectedCard, setSelectedCard] = React.useState({});
     const [currentUser, setCurrentUser] = React.useState("");
     const [cards, setCards] = React.useState([]);
+    const [loggedIn, setLoggedIn] = React.useState(!!localStorage.getItem('token')); //содержит статус пользователя — вошёл он в систему или нет
+    const [informationInfoTooltip, setInformationInfoTooltip] = React.useState({ img: null, msg: null });
+    const navigate = useNavigate();
 
     //загрузка информации о пользователе и карточек с сервера
     React.useEffect(() => {
@@ -71,6 +83,59 @@ function App() {
             .catch(err => console.log(`Ошибка добавления новой карточки на сервер: ${err}`))
     }
 
+    //регистрация
+    function handleRegistration( email, password ) {
+        auth.register( email, password )
+            .then(res => {
+                if (res) {
+                    handleInformationInfoTooltip(imgAuthYes, 'Вы успешно зарегистрировались!')
+                    handleInfoTooltipClick();
+                    navigate('sign-in');
+                } else {
+                    handleInformationInfoTooltip(imgAuthNo, 'Что-то пошло не так! Попробуйте ещё раз.')
+                    handleInfoTooltipClick();
+                }
+            })
+            .catch(err => console.error(`Ошибка регистрации: ${err}`))
+    }
+
+    //авторизация
+    function handleAuthorization( email, password ) {
+        auth.authorize( email, password )
+            .then(res => {
+                if(res) {
+                    setLoggedIn(true);
+                    navigate('/');
+                } else {
+                    handleInformationInfoTooltip(imgAuthNo, 'Что-то пошло не так! Попробуйте ещё раз.')
+                    handleInfoTooltipClick();
+                }
+            })
+            .catch(err => {
+                console.error(`Ошибка авторизации: ${err}`);
+            })
+    }
+
+    function handleTokenCheck() {
+        const token = localStorage.getItem('token');
+        if(token) {
+            return auth.checkToken(token)
+                .then(status => status)
+                .catch(err => console.log(`Ошибка запроса проверки токена: ${err}`))
+        }
+        return false;
+    }
+
+    //изменение картинки и сообщения в попапе InfoTooltip при регистрации и авторизации
+    function handleInformationInfoTooltip(img, msg){
+        setInformationInfoTooltip({ img: img, msg: msg })
+    }
+
+    //открытие popup InfoTooltip
+    function handleInfoTooltipClick() {
+        setIsInfoTooltipOpen(true)
+    }
+
     //открытие popup edit avatar
     function handleEditAvatarClick() {
         setIsEditAvatarPopupOpen(true)
@@ -101,23 +166,61 @@ function App() {
         setIsAddCardPopupOpen(false)
         setIsEditAvatarPopupOpen(false)
         setIsDeleteCardPopupOpen({isOpen: false, card: {}})
+        setIsInfoTooltipOpen(false)
         setSelectedCard({})
     }
 
     return (
         <CurrentUserContext.Provider value={currentUser}>
             <div className="page">
-                <Header />
-                <Main
-                    onEditProfile={handleEditProfileClick}
-                    onAddCard={handleAddCardClick}
-                    onEditAvatar={handleEditAvatarClick}
-                    onCardOpenClick={handleCardOpenClick}
-                    onConfirmDeleteCard={handleConfirmDeleteCardClick}
-                    onCardLike={handleCardLike}
-                    cards={cards}
+                <Header
+                    loggedIn={loggedIn}
+                    email={localStorage.getItem('email')}
+                    setLoggedIn={setLoggedIn}
                 />
+                <Routes>
+                    <Route
+                        path='/'
+                        element={ <ProtectedRoute
+                            element={Main}
+                            onEditProfile={handleEditProfileClick}
+                            onAddCard={handleAddCardClick}
+                            onEditAvatar={handleEditAvatarClick}
+                            onCardOpenClick={handleCardOpenClick}
+                            onConfirmDeleteCard={handleConfirmDeleteCardClick}
+                            onCardLike={handleCardLike}
+                            cards={cards}
+                            loggedIn={loggedIn}
+                            onCheckToken={handleTokenCheck}
+                        />
+                        }
+                    />
+                    <Route
+                        path='/sign-in'
+                        element={
+                            <Login
+                                onAuthorization={handleAuthorization}
+                            />
+                        }
+                    />
+                    <Route
+                        path='/sign-up'
+                        element={
+                            <Register
+                                onRegister={handleRegistration}
+                            />
+                        }
+                    />
+                </Routes>
+
                 <Footer />
+
+                <InfoTooltip
+                    img={informationInfoTooltip.img}
+                    title={informationInfoTooltip.msg}
+                    isOpen={isInfoTooltipOpen}
+                    onClose={closeAllPopups}
+                />
 
                 <PopupWithForm
                     title="Вы уверены?"
@@ -127,8 +230,7 @@ function App() {
                     onSubmit={handleCardDelete}
                     buttonText='Да'
                     buttonTextLoading='Удаление...'
-                >
-                </PopupWithForm>
+                />
 
                 <EditProfilePopup
                     isOpen={isEditProfilePopupOpen}

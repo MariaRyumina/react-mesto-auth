@@ -14,7 +14,7 @@ export default function Main({
 }) {
     const currentUser = React.useContext(CurrentUserContext);
 
-    return(
+    return (
         <main className="content">
             <section className="profile">
                 <div className="profile__avatar-group">

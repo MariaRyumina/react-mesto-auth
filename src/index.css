@@ -2,6 +2,7 @@
 @import url(./vendor/fonts/inter.css);
 @import url(styles/page/page.css);
 @import url(styles/header/header.css);
+@import url(styles/header/__auth/header__auth.css);
 @import url(styles/logo/logo.css);
 @import url(styles/profile/profile.css);
 @import url(styles/profile/__avatar/profile__avatar.css);
@@ -41,3 +42,26 @@
 @import url(styles/popup/_content/_image/popup_content_image.css);
 @import url(styles/popup/__img-caption/popup__img-caption.css);
 @import url(styles/popup/__input-error/popup__input-error.css);
+
+@import url(styles/login/login.css);
+@import url(styles/register/register.css);
+@import url(styles/login/__title/login__title.css);
+@import url(styles/register/__title/register__title.css);
+@import url(styles/login/__form/login__form.css);
+@import url(styles/register/__form/register__form.css);
+@import url(styles/login/__input/login__input.css);
+@import url(styles/register/__input/register__input.css);
+@import url(styles/login/__input-error/login__input-error.css);
+@import url(styles/register/__input-error/register__input-error.css);
+@import url(styles/login/__button/login__button.css);
+@import url(styles/register/__button/register__button.css);
+@import url(styles/register/__subtitle/register__subtitle.css);
+@import url(styles/register/__subtitle-link/register__subtitle-link.css);
+
+@import url(styles/popup/__auth-img/popup__auth-img.css);
+@import url(styles/popup/__auth-status/popup__auth-status.css);
+@import url(styles/popup/__auth-title/popup__auth-title.css);
+
+@import url(styles/header/__auth-email/header__auth-email.css);
+@import url(styles/header/__auth-logout/header__auth-logout.css);
+
