@@ -1,13 +1,18 @@
 import React from 'react';
 import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 
-export default function Card({ card, onCardOpenClick, onConfirmDeleteCard, onCardLike }) {
+export default function Card({
+                                 card,
+                                 onCardOpenClick,
+                                 onConfirmDeleteCard,
+                                 onCardLike
+}) {
     const currentUser = React.useContext(CurrentUserContext);
 
     const isOwn = card.owner._id === currentUser._id;
     const isLiked = card.likes.some(i => i._id === currentUser._id);
 
-    const cardLikeButtonClassName = ( `element__like ${isLiked && 'element__like_active'}` );
+    const cardLikeButtonClassName = ( `element__like ${isLiked ? 'element__like_active' : ''}` );
 
     function handleCardOpenClick() {
         onCardOpenClick(card);

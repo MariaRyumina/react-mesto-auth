@@ -11,7 +11,7 @@ import { CurrentUserContext } from "../contexts/CurrentUserContext";
 import EditProfilePopup from "./landing/EditProfilePopup";
 import EditAvatarPopup from "./landing/EditAvatarPopup";
 import AddCardPopup from "./landing/AddCardPopup";
-import {Route, Routes, useNavigate} from "react-router-dom";
+import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
@@ -23,30 +23,89 @@ function App() {
     const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = React.useState(false);
     const [isAddCardPopupOpen, setIsAddCardPopupOpen] = React.useState(false);
     const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = React.useState(false);
-    const [isDeleteCardPopupOpen, setIsDeleteCardPopupOpen] = React.useState({isOpen : false, card: {}});
+    const [isDeleteCardPopupOpen, setIsDeleteCardPopupOpen] = React.useState(false);
+    const [cardToDelete, setCardToDelete] = React.useState({}); //карточка, которую необходимо удалить
     const [isInfoTooltipOpen, setIsInfoTooltipOpen] = React.useState(false);
-    const [selectedCard, setSelectedCard] = React.useState({});
-    const [currentUser, setCurrentUser] = React.useState("");
+    const [selectedCard, setSelectedCard] = React.useState({}); //выбранная карточка, для открытия во весь размер
+    const [currentUser, setCurrentUser] = React.useState({});
     const [cards, setCards] = React.useState([]);
-    const [loggedIn, setLoggedIn] = React.useState(!!localStorage.getItem('token')); //содержит статус пользователя — вошёл он в систему или нет
-    const [informationInfoTooltip, setInformationInfoTooltip] = React.useState({ img: null, msg: null });
+    const [loggedIn, setLoggedIn] = React.useState(false); //содержит статус пользователя — вошёл он в систему или нет
+    const [informationInfoTooltip, setInformationInfoTooltip] = React.useState({ img: null, msg: null }); //информация в попапе InfoTooltip
+    const [email, setEmail] = React.useState('');
     const navigate = useNavigate();
+
+    React.useEffect(() => {
+        handleTokenCheck()
+    }, [])
 
     //загрузка информации о пользователе и карточек с сервера
     React.useEffect(() => {
-        Promise.all([api.getUserInfo(), api.getCardList()])
-            .then(( [resultUser, resultCard] ) => {
+        if(loggedIn) {
+            Promise.all([api.getUserInfo(), api.getCardList()])
+                .then(([resultUser, resultCard]) => {
                     setCurrentUser(resultUser)
                     setCards(resultCard)
+                })
+                .catch(err => console.log(`Ошибка загрузки с сервера: ${err}`))
+        }
+    }, [loggedIn])
+
+    //регистрация
+    function handleRegistration( email, password ) {
+        auth.register( email, password )
+            .then(res => {
+                if (res) {
+                    handleInformationInfoTooltip(imgAuthYes, 'Вы успешно зарегистрировались!')
+                    handleInfoTooltipClick();
+                    navigate('sign-in');
+                }
             })
-            .catch(err => console.log(`Ошибка загрузки с сервера: ${err}`))
-    }, [])
+            .catch(err => {
+                console.error(`Ошибка регистрации: ${err}`);
+                handleInformationInfoTooltip(imgAuthNo, 'Что-то пошло не так! Попробуйте ещё раз.');
+                handleInfoTooltipClick();
+            })
+    }
+
+    //авторизация
+    function handleAuthorization( email, password ) {
+        auth.authorize( email, password )
+            .then(res => {
+                if(res) {
+                    setLoggedIn(true);
+                    navigate('/');
+                }
+            })
+            .catch(err => {
+                console.error(`Ошибка авторизации: ${err}`);
+                handleInformationInfoTooltip(imgAuthNo, 'Что-то пошло не так! Попробуйте ещё раз.');
+                handleInfoTooltipClick();
+            })
+    }
+
+    //проверка токена на валидность
+    function handleTokenCheck() {
+        const token = localStorage.getItem('token');
+        if(token) {
+            auth.checkToken(token)
+                .then(res => {
+                    if (res) {
+                        setLoggedIn(true);
+                        setEmail(res.data.email);
+                        navigate("/");
+                    }
+                })
+                .catch(err => console.log(`Ошибка запроса проверки токена: ${err}`))
+        }
+    }
 
     //загрузка новой информации о пользователе на сервер
     function handleUpdateUser({ name, about }) {
         api.patchUserInfo({ name, about })
-            .then(resultUser => setCurrentUser(resultUser))
-            .then(() => closeAllPopups())
+            .then(resultUser => {
+                setCurrentUser(resultUser);
+                closeAllPopups();
+            })
             .catch(err => console.log(`Ошибка отправки данных о пользователе на сервер: ${err}`))
     }
 
@@ -69,8 +128,8 @@ function App() {
 
     //запрос на удаление карточки
     function handleCardDelete() {
-        api.deleteCard(isDeleteCardPopupOpen.card._id)
-            .then(() => setCards(cards => cards.filter(c => c._id !== isDeleteCardPopupOpen.card._id)))
+        api.deleteCard(cardToDelete._id)
+            .then(() => setCards(cards => cards.filter(c => c._id !== cardToDelete._id)))
             .then(() => closeAllPopups())
             .catch(err => console.log(`Ошибка удаления карточки: ${err}`))
     }
@@ -83,52 +142,9 @@ function App() {
             .catch(err => console.log(`Ошибка добавления новой карточки на сервер: ${err}`))
     }
 
-    //регистрация
-    function handleRegistration( email, password ) {
-        auth.register( email, password )
-            .then(res => {
-                if (res) {
-                    handleInformationInfoTooltip(imgAuthYes, 'Вы успешно зарегистрировались!')
-                    handleInfoTooltipClick();
-                    navigate('sign-in');
-                } else {
-                    handleInformationInfoTooltip(imgAuthNo, 'Что-то пошло не так! Попробуйте ещё раз.')
-                    handleInfoTooltipClick();
-                }
-            })
-            .catch(err => console.error(`Ошибка регистрации: ${err}`))
-    }
-
-    //авторизация
-    function handleAuthorization( email, password ) {
-        auth.authorize( email, password )
-            .then(res => {
-                if(res) {
-                    setLoggedIn(true);
-                    navigate('/');
-                } else {
-                    handleInformationInfoTooltip(imgAuthNo, 'Что-то пошло не так! Попробуйте ещё раз.')
-                    handleInfoTooltipClick();
-                }
-            })
-            .catch(err => {
-                console.error(`Ошибка авторизации: ${err}`);
-            })
-    }
-
-    function handleTokenCheck() {
-        const token = localStorage.getItem('token');
-        if(token) {
-            return auth.checkToken(token)
-                .then(status => status)
-                .catch(err => console.log(`Ошибка запроса проверки токена: ${err}`))
-        }
-        return false;
-    }
-
     //изменение картинки и сообщения в попапе InfoTooltip при регистрации и авторизации
     function handleInformationInfoTooltip(img, msg){
-        setInformationInfoTooltip({ img: img, msg: msg })
+        setInformationInfoTooltip({ img, msg })
     }
 
     //открытие popup InfoTooltip
@@ -152,8 +168,9 @@ function App() {
     }
 
     //открытие popup confirm delete card
-    function handleConfirmDeleteCardClick(currentCard) {
-        setIsDeleteCardPopupOpen({ isOpen: true, card: currentCard })
+    function handleConfirmDeleteCardClick(card) {
+        setIsDeleteCardPopupOpen(true)
+        setCardToDelete(card)
     }
 
     //открытие popup image
@@ -165,8 +182,9 @@ function App() {
         setIsEditProfilePopupOpen(false)
         setIsAddCardPopupOpen(false)
         setIsEditAvatarPopupOpen(false)
-        setIsDeleteCardPopupOpen({isOpen: false, card: {}})
+        setIsDeleteCardPopupOpen(false)
         setIsInfoTooltipOpen(false)
+        setCardToDelete({})
         setSelectedCard({})
     }
 
@@ -175,10 +193,14 @@ function App() {
             <div className="page">
                 <Header
                     loggedIn={loggedIn}
-                    email={localStorage.getItem('email')}
+                    email={email}
                     setLoggedIn={setLoggedIn}
                 />
                 <Routes>
+                    <Route
+                        path='/*'
+                        element={loggedIn ? <Navigate to="/" /> : <Navigate to="/sign-in" />}
+                    />
                     <Route
                         path='/'
                         element={ <ProtectedRoute
@@ -191,7 +213,6 @@ function App() {
                             onCardLike={handleCardLike}
                             cards={cards}
                             loggedIn={loggedIn}
-                            onCheckToken={handleTokenCheck}
                         />
                         }
                     />
@@ -225,7 +246,7 @@ function App() {
                 <PopupWithForm
                     title="Вы уверены?"
                     name="delete"
-                    isOpen={isDeleteCardPopupOpen.isOpen}
+                    isOpen={isDeleteCardPopupOpen}
                     onClose={closeAllPopups}
                     onSubmit={handleCardDelete}
                     buttonText='Да'

@@ -3,15 +3,23 @@ class Auth {
         this._baseUrl = baseUrl;
     }
 
+    //проверка корректности ответа, вызывать при каждом запросе
+    _handleResponse (res) {
+        if (res.ok) {
+            return res.json()
+        }
+        return Promise.reject(res.status)
+    }
+
     register( email, password ) {
         return fetch(`${this._baseUrl}/signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ "email": email, "password": password })
+            body: JSON.stringify({ email, password })
         })
-        .then(res => res.ok ? res.json() : null)
+            .then(res => this._handleResponse(res))
     }
 
     authorize( email, password ) {
@@ -20,13 +28,12 @@ class Auth {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ "email": email, "password": password })
+            body: JSON.stringify({ email, password })
         })
-            .then(res => res.ok ? res.json() : null)
+            .then(res => this._handleResponse(res))
             .then((data) => {
                 if (data != null && data.token) {
                     localStorage.setItem('token', data.token);
-                    localStorage.setItem('email', email);
                     return true;
                 }
             })
@@ -41,7 +48,7 @@ class Auth {
                 "Authorization" : `Bearer ${token}`
             }
         })
-            .then(res => res.ok)
+            .then(res => this._handleResponse(res))
     }
 }
 

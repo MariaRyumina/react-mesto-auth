@@ -6,34 +6,27 @@ export default function AddCardPopup({ isOpen, onClose, onAddCard }) {
     const [link, setLink] = React.useState('');
 
     React.useEffect(() => {
-        setName(name);
-        setLink(link)
-    })
-
-    function cleanInputs() {
-        setName('')
-        setLink('')
-    }
+        setName('');
+        setLink('');
+    }, [isOpen])
 
     function handleSubmit() {
         onAddCard({
             name,
             link
         })
-        cleanInputs()
     }
 
     function handleChangeName(e) {
-        setName(e.target.value)
+        setName(e.target.value);
     }
 
     function handleChangeLink(e) {
-        setLink(e.target.value)
+        setLink(e.target.value);
     }
 
     function closeAddPopup() {
         onClose();
-        cleanInputs();
     }
 
     return(

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function PopupWithForm({ title, name, isOpen, onClose, children, onSubmit, buttonText, buttonTextLoading }) {
+export default function PopupWithForm({ title, name, isOpen, onClose, children, onSubmit, buttonText }) {
     function handleSubmit(e) {
         e.preventDefault();
         onSubmit();
