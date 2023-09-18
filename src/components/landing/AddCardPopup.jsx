@@ -25,16 +25,12 @@ export default function AddCardPopup({ isOpen, onClose, onAddCard }) {
         setLink(e.target.value);
     }
 
-    function closeAddPopup() {
-        onClose();
-    }
-
     return(
         <PopupWithForm
             title="Новое место"
             name="add"
             isOpen={isOpen}
-            onClose={closeAddPopup}
+            onClose={onClose}
             onSubmit={handleSubmit}
             buttonText='Создать'
             buttonTextLoading='Сохранение...'
