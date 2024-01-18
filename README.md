@@ -2,7 +2,7 @@
   <img src="https://pictures.s3.yandex.net/resources/__2020-02-25__12.19.27_1586081326.png" alt="promo">
 </div>
 
-# *Учебный проект "Место" (React)*
+# *Учебный проект "Место" (React) с авторизацией и регистрацией*
 https://mariaryumina.github.io/react-mesto-auth/
 ___
 
